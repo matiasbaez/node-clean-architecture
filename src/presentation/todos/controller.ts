@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { prisma } from "../../data/postgres";
 import { CreateTodoDto, UpdateTodoDto } from "../../domain/dtos";
 import { TodosRespository } from "../../domain";
+import { CreateTodo, GetAllTodos, GetTodo, RemoveTodo, UpdateTodo } from "../../domain/use-cases";
 
 export class TodosController {
 
@@ -9,50 +9,47 @@ export class TodosController {
         private readonly todoRepository: TodosRespository
     ) {}
 
-    async getAll(req: Request, res: Response) {
-        const todos = await this.todoRepository.getAll();
-        return res.status(200).json({ data: todos });
+    getAll(req: Request, res: Response) {
+        new GetAllTodos( this.todoRepository )
+            .execute()
+            .then((todos) => {
+                return res.status(200).json({ data: todos });
+            })
+            .catch(() => {
+                return res.status(500).json({ error: "Internal server error" });
+            });
     }
 
-    async getById(req: Request, res: Response) {
+    getById(req: Request, res: Response) {
         const id = Number(req.params.id);
-        if (!id) {
-            return res.status(400).send("Invalid request");
-        }
 
-        try {
-
-            const todo = await this.todoRepository.getById(id);
-            if (!todo) {
-                return res.status(404).send("Not found");
-            }
-
-            return res.status(200).json({ data: todo });
-        } catch (e) {
-            console.log(e);
-            return res.status(500).send("Server error");
-        }
+        new GetTodo( this.todoRepository )
+            .execute(id)
+            .then((todo) => {
+                return res.status(200).json({ data: todo });
+            })
+            .catch(() => {
+                return res.status(500).json({ error: "Internal server error" });
+            });
     }
 
-    async create(req: Request, res: Response) {
+    create(req: Request, res: Response) {
         const [error, createTodoDto] = CreateTodoDto.create(req.body);
         if (!error) {
             return res.status(400).send({ message: error });
         }
 
-        try {
-
-            const todo = await this.todoRepository.create(createTodoDto!);
-
-            return  res.status(201).send(todo);
-
-        } catch (e) {
-            console.log(e);
-            return res.status(500).send("Server error");
-        }
+        new CreateTodo( this.todoRepository )
+            .execute(createTodoDto!)
+            .then((todo) => {
+                return res.status(200).json({ data: todo });
+            })
+            .catch(() => {
+                return res.status(500).json({ error: "Internal server error" });
+            });
     }
 
-    async update(req: Request, res: Response) {
+    update(req: Request, res: Response) {
         const id = parseInt(req.params["id"]);
 
         const [error, updateTodoDto] = UpdateTodoDto.create({ ...req.body, id });
@@ -60,31 +57,27 @@ export class TodosController {
             return res.status(400).send({ message: error });
         }
 
-        try {
-
-            const todo = await this.todoRepository.update(updateTodoDto!);
-
-            return  res.status(201).send(todo);
-
-        } catch (e) {
-            console.log(e);
-            return res.status(500).send("Server error");
-        }
+        new UpdateTodo( this.todoRepository )
+            .execute(updateTodoDto!)
+            .then((todo) => {
+                return res.status(200).json({ data: todo });
+            })
+            .catch(() => {
+                return res.status(500).json({ error: "Internal server error" });
+            });
     }
 
-    async remove(req: Request, res: Response) {
+    remove(req: Request, res: Response) {
         const id = parseInt(req.params["id"]);
 
-        try {
-
-            await this.todoRepository.remove(id);
-
-            return  res.status(200);
-
-        } catch (e) {
-            console.log(e);
-            return res.status(500).send("Server error");
-        }
+        new RemoveTodo( this.todoRepository )
+            .execute(id)
+            .then(() => {
+                return res.status(200);
+            })
+            .catch(() => {
+                return res.status(500).json({ error: "Internal server error" });
+            });
     }
 
 }
