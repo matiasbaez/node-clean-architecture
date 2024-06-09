@@ -2,17 +2,13 @@ import { TodoEntity } from "../../entities/todo.entity";
 import { TodosRespository } from "../../repositories/todos.repository";
 
 export interface GetAllTodosUseCase {
-    execute( ): Promise<TodoEntity[]>;
+  execute(): Promise<TodoEntity[]>;
 }
 
 export class GetAllTodos implements GetAllTodosUseCase {
+  constructor(private readonly repository: TodosRespository) {}
 
-    constructor(
-        private readonly repository: TodosRespository
-    ) {}
-
-    execute(): Promise<TodoEntity[]> {
-        return this.repository.getAll();
-    }
-
+  execute(): Promise<TodoEntity[]> {
+    return this.repository.getAll();
+  }
 }
